@@ -53,7 +53,7 @@ def compute_clustering(dataset_clusters, scaler_method='StandardScaler', resolut
     else:
         dataset_scaled = dataset_clusters.copy()
 
-    # Compute the graph (use k-NearestNeighbors with k = 5)
+    # Compute the graph (use k-NearestNeighbors with k = 4)
     n = np.shape(dataset_scaled)[0]
     neigh = NearestNeighbors(algorithm='brute', metric='euclidean', n_jobs=1).fit(dataset_scaled)
     W = neigh.kneighbors_graph(dataset_scaled).toarray() - np.diag(np.ones(n))
@@ -133,11 +133,11 @@ def plot_features_clusters(
         dataset_scaled = dataset_filled.copy()
 
     # ---------------- t-SNE ----------------
-    X_tsne2 = TSNE(n_components=2, perplexity=30, random_state=42, init='pca').fit_transform(
+    X_tsne2 = TSNE(n_components=2, perplexity=30, random_state=42).fit_transform(
         dataset_scaled.values.reshape((n, -1))
     )
 
-    X_tsne3 = TSNE(n_components=3, perplexity=30, random_state=42, init='pca').fit_transform(
+    X_tsne3 = TSNE(n_components=3, perplexity=30, random_state=42).fit_transform(
         dataset_scaled.values.reshape((n, -1))
     )
 

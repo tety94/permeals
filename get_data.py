@@ -7,14 +7,17 @@ EXCEL_FILE_NAME = 'database.xlsx'
 CSF_ANALYSIS_NAME = 'CSF_analysis_On_pALS.csv'
 
 def get_sheet(file=EXCEL_FILE_NAME,sheet_name=None):
-    df = pd.read_excel(file,  sheet_name=sheet_name)
+    df = pd.read_excel(file,  sheet_name=sheet_name, converters={'el_escorial_criteria' : convert_el_escorial_criteria,
+                                                           'gold_coast_criteria': convert_gold_coast_criteria,
+                                                           'genetic_WT_mut' : convert_genetic_WT_mut,
+                                                          'Strong_CAT' : convert_Strong_CAT})
     # df = pd.read_csv(EXCEL_FILE_NAME,  sep=',' , decimal=',')
     df = df[df['pt_code'].notna()]
 
     df['site_of_onset_BS'] = 0
     df.loc[df['site_of_onset'] == 1, 'site_of_onset_BS'] = 1 #spinale
 
-    df['genetic_WT_mut'] = df['genetic_WT_mut'].map({'WT': 0, 'mut': 1}).astype(float)
+    #df['genetic_WT_mut'] = df['genetic_WT_mut'].map({'WT': 0, 'mut': 1}).astype(float)
 
     return df
 

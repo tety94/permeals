@@ -22,7 +22,7 @@ from scipy.spatial import distance                 # to perform hierarchical clu
 from scipy.cluster import hierarchy, hierarchy
 from scipy.cluster.hierarchy import fcluster
 
-from sklearn.metrics.cluster import adjusted_rand_score  # to perform ARI
+from sklearn.metrics.cluster import rand_score  # to perform ARI
 
 from get_data import *
 from utilities import *
@@ -41,13 +41,13 @@ if __name__ == '__main__':
 
     dataset = get_sheet(file=file, sheet_name='CSF')
     # dataset = pd.read_excel(dirpath + file + '.xlsx', sheet_name = sheet_name, converters={'el_escorial_criteria' : convert_el_escorial_criteria,
-    #                                                        'gold_coast_criteria': convert_gold_coast_criteria,
-    #                                                        'genetic_WT_mut' : convert_genetic_WT_mut,
-    #                                                        'Strong_CAT' : convert_Strong_CAT})
+     #                                                       'gold_coast_criteria': convert_gold_coast_criteria,
+      #                                                      'genetic_WT_mut' : convert_genetic_WT_mut,
+       #                                                     'Strong_CAT' : convert_Strong_CAT})
                                                            
-
     # Delete pz with 'el_escorial_criteria = PLS definite' (Sara)
-    dataset = dataset[dataset['el_escorial_criteria'] != 'pls definite'].copy()
+    #dataset = dataset[dataset['el_escorial_criteria'] != 'PLS definite'].copy()
+    dataset = dataset[dataset['pt_code'] != 'MI-ALS-EP-A1481'].copy()
     dataset = dataset[dataset['pt_code'] != 'MI-ALS-EP-A1362'].copy()
 
     # Dataset to compute the clusters
@@ -57,7 +57,7 @@ if __name__ == '__main__':
     clinical_columns_categorical = get_clinical_parameters_categorical()
     plasma_columns = get_plasma_columns()
 
-    features_clusters = macsplex_columns  + liquor_columns #+ plasma_columns
+    features_clusters = macsplex_columns  + liquor_columns + plasma_columns
     dataset_cluster = dataset[features_clusters].copy()
     
     # Relevant features 
@@ -82,12 +82,11 @@ if __name__ == '__main__':
     
     # For each resolution parameter, compute the Leiden algorithm
     for ii, res in enumerate(resolutions):        
-        Leiden_clusters = compute_clustering(dataset_filled, scaler_method = 'StandardScaler', resolution_Leiden = res)
+        Leiden_clusters = compute_clustering(dataset_filled,  scaler_method = 'StandardScaler', resolution_Leiden = res)
         CLUSTERS[ii, :] = Leiden_clusters
        
-    
     # In order to compute the similarity between the partitions, we compute the Adjusted Rand Index1 pairwise and used the results to construct a similarity matrix
-    ad_rand_index = np.array([[adjusted_rand_score(CLUSTERS[i,:], CLUSTERS[j,:]) for i in range(M) ]for j in range(M)])
+    ad_rand_index = np.array([[rand_score(CLUSTERS[i,:], CLUSTERS[j,:]) for i in range(M) ]for j in range(M)])
 
     sns.heatmap(ad_rand_index, annot = True, cmap="coolwarm")
     plt.title('Adjusted Rand index matrix')

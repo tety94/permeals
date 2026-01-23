@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.stats import f_oneway, kruskal, chi2_contingency, ttest_ind, mannwhitneyu
 import pandas as pd
+from get_data import get_clinical_parameters_categorical
 
 # ---------------------------------------------------------------------
 # 2. Analisi differenze tra cluster
@@ -10,6 +11,8 @@ def analyze_cluster_differences(df, cluster_col, other_features):
     Analizza differenze tra i cluster per ciascuna variabile (numerica o categorica),
     mostrando sempre le IQR per le variabili numeriche.
     """
+    categorical_features = get_clinical_parameters_categorical()
+    
     print("\n== Analisi delle differenze tra cluster ==")
     num_clusters = df[cluster_col].nunique()
 
@@ -17,7 +20,11 @@ def analyze_cluster_differences(df, cluster_col, other_features):
         print(f"\nVariabile: {feature}")
         try:
             groups = [group[feature].dropna() for _, group in df.groupby(cluster_col)]
-            dtype = df[feature].dtype
+            
+            if feature in categorical_features:
+                dtype = "object"
+            else:
+                dtype = df[feature].dtype
 
             if np.issubdtype(dtype, np.number):
                 # ---- Stampo SEMPRE le IQR di base, per ogni cluster ----
