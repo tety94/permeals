@@ -6,8 +6,8 @@ EXCEL_FILE_NAME = 'database.xlsx'
 
 CSF_ANALYSIS_NAME = 'CSF_analysis_On_pALS.csv'
 
-def get_sheet(sheet_name=None):
-    df = pd.read_excel(EXCEL_FILE_NAME,  sheet_name=sheet_name)
+def get_sheet(file=EXCEL_FILE_NAME,sheet_name=None):
+    df = pd.read_excel(file,  sheet_name=sheet_name)
     # df = pd.read_csv(EXCEL_FILE_NAME,  sep=',' , decimal=',')
     df = df[df['pt_code'].notna()]
 
@@ -168,12 +168,25 @@ def get_mrc_columns():
 
 def get_clinical_data():
     return [
-        'sex', 'onset_age', 'dgn_age', 'dgn_delay', 'pre-morbid_weight', 'pre-morbid_BMI', 'genetic_WT_mut',
-        # 'phenotype', 'el_escorial_criteria', 'Strong_CAT',
-        'delta_weight_pre_dgn', 'delta_BMI_pre_dgn',
-        'C9orf72',
+        # 'sex', 'onset_age', 'dgn_age', 'dgn_delay', 'pre-morbid_weight', 'pre-morbid_BMI', 'genetic_WT_mut',
+        # # 'phenotype', 'el_escorial_criteria', 'Strong_CAT',
+        # 'delta_weight_pre_dgn', 'delta_BMI_pre_dgn',
+        # 'C9orf72',
 
+        'sex', 'onset_age', 'dgn_age', 'dgn_delay', 'el_escorial_criteria', 'gold_coast_criteria', 'genetic_WT_mut',
+        'C9orf72',
+        'phenotype', 'site_of_onset', 'side_of_onset', 'pre-morbid_weight', 'weight_at_diagnosis', 'pre-morbid_BMI',
+        'dgn_BMI',
+        'delta_weight_pre_dgn', 'delta_BMI_pre_dgn', 'time_to_NIV', 'time_to_PEG', 'time_to_tracheo', 'time_to_death',
+        'riluzole',
+        'other_DM_therapies', 'trial', 'MRC_composite_score', 'ALSFRSr_TOT', 'delta_ALSFRS_onset', "King's",
+        'C_MiToS_TOT', 'MGH_TOT',
+        'Penn_TOT', 'Strong_CAT'
     ]
+
+def get_clinical_parameters_categorical():
+	return ['sex', 'el_escorial_criteria', 'gold_coast_criteria', 'genetic_WT_mut', 'C9orf72', 'phenotype', 'site_of_onset', 'side_of_onset', 'riluzole',
+		   'other_DM_therapies', 'trial', 'Strong_CAT']
 
 def get_als_controls_data():
     return [
@@ -193,6 +206,9 @@ def get_macsplex_columns():
         "Ganglioside GD2", "Podoplanin", "CD9", "CD44", "CD63",
         "CD107a", "GLAST ACSA-1", "O4", "CD11b", "CSPG4"
     ];
+
+
+
 
 
 def preprocess_data(df, features, scale=True):
@@ -251,3 +267,53 @@ def get_merged_csf_data(df, csf_df):
         how='left'
     )
     return merged_df
+
+
+
+##################################################################################################################################
+
+# Functions for converting categorical features into numerical ones
+
+def convert_el_escorial_criteria(x):
+    x = x.lower()
+    if x == 'definite':
+        res = 5
+    elif  x == 'probable':
+        res = 4
+    elif x == 'probable laboratory supported':
+        res = 3
+    elif x == 'possible':
+        res = 2
+    elif x == 'suspected':
+        res = 1
+    else:
+        res = x
+    return res
+
+def convert_gold_coast_criteria(x):
+    x = x.lower()
+    if x == 'yes':
+        res = 1
+    elif  x == 'no':
+        res = 0
+    else:
+        res = x
+    return res
+
+def convert_genetic_WT_mut(x):
+	x = x.lower()
+	if x == 'mut':
+		res = 1
+	elif x == 'wt':
+		res = 0
+	else:
+		res = x
+	return res
+
+def convert_Strong_CAT(x):
+	x = x.lower()
+	if x == 'cn':
+		res = 1
+	else:
+		res = x
+	return res
