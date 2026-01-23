@@ -25,6 +25,9 @@ from get_data import *   # funzioni di caricamento dati definite altrove
 # ---------------------------------------------------------------------
 # 1. Confronto metodi di clustering
 # ---------------------------------------------------------------------
+
+RESULT_FOLDER = 'results/test3/'
+
 def compare_clustering_methods(X_scaled, max_k=10, time=0, plot=True):
     """
     Confronta KMeans, Spectral e GaussianMixture in base al silhouette score.
@@ -60,7 +63,7 @@ def compare_clustering_methods(X_scaled, max_k=10, time=0, plot=True):
         plt.ylabel('Silhouette score')
         plt.legend()
         plt.tight_layout()
-        plt.savefig(f'img/test3/compare_silhouette_{time}.png')
+        plt.savefig(f'{RESULT_FOLDER}img/compare_silhouette_{time}.png')
 
     best_k = {method: K[np.argmax(vals)] for method, vals in scores.items()}
     print("Numero ottimale di cluster (silhouette):", best_k)
@@ -156,7 +159,7 @@ def plot_tsne_clusters(X_scaled, cluster_labels_dict, time=0, perplexity=30, ran
         plt.ylabel("t-SNE 2")
         plt.legend(title="Cluster", bbox_to_anchor=(1.05, 1), loc='upper left')
         plt.tight_layout()
-        plt.savefig(f"img/test3/tsne_{method_name}_{time}.png")
+        plt.savefig(f"{RESULT_FOLDER}img/tsne_{method_name}_{time}.png")
         plt.show()
 
 
@@ -225,7 +228,7 @@ def run_clustering_analysis(df, cluster_features, other_features,
 
         # Salva CSV
         out_csv = f"clustered_data_{method}_{time}.csv"
-        df_tmp.to_csv(out_csv, index=False, sep=';', decimal=',')
+        df_tmp.to_csv(f"{RESULT_FOLDER}{out_csv}", index=False, sep=';', decimal=',')
         print(f"✅ Risultati salvati in: {out_csv}")
 
         # Heatmap centroidi (solo KMeans e GMM)
@@ -240,7 +243,7 @@ def run_clustering_analysis(df, cluster_features, other_features,
             plt.xlabel("Feature")
             plt.ylabel("Cluster")
             plt.tight_layout()
-            out_img = f"img/test3/centroid_cluster_{method}_{time}.png"
+            out_img = f"{RESULT_FOLDER}img/centroid_cluster_{method}_{time}.png"
             plt.savefig(out_img)
             plt.close()
             print(f"🖼  Heatmap salvata in: {out_img}")
@@ -262,11 +265,12 @@ if __name__ == "__main__":
     respiratory_cols = get_respiratory_columns()
     mrc_columns      = get_mrc_columns()
     macsplex_columns = get_macsplex_columns()
+    als_no_als_colums= get_als_controls_data()
 
     cluster_features = macsplex_columns #+ liquor_cols
     other_features   = (umns_cols + alsfrs_cols + plasma_cols  +
                         clinical_cols + ['delta_bmi'] + mrc_columns + liquor_cols +
-                        respiratory_cols)
+                        als_no_als_colums + respiratory_cols)
 
     df = get_sheet(sheet_name='CSF')
 

@@ -172,6 +172,11 @@ def get_clinical_data():
         # 'phenotype', 'el_escorial_criteria', 'Strong_CAT',
         'delta_weight_pre_dgn', 'delta_BMI_pre_dgn',
         'C9orf72',
+
+    ]
+
+def get_als_controls_data():
+    return [
         'HC_ALS_AD'
     ]
 

@@ -16,6 +16,7 @@ from sklearn.inspection import permutation_importance
 # 'delta_ALSFRS_onset'
 # 'death/tracheo'
 TARGET_COLUMN = 'delta_ALSFRS_onset'
+RESULT_FOLDER = 'results/test4/'
 
 clinical_columns = get_clinical_data()
 plasma_columns = get_plasma_columns()
@@ -53,14 +54,14 @@ def get_scale_pos_weight(y):
     n_neg = sum(y == 0)
     return n_neg / n_pos if n_pos > 0 else 1
 
-def save_feature_importance(model, feature_names, output_path='test4/feature_importance.csv'):
+def save_feature_importance(model, feature_names, output_path='feature_importance.csv'):
     importances = model.feature_importances_
     df_feat_imp = pd.DataFrame({
         'feature': feature_names,
         'importance': importances
     }).sort_values(by='importance', ascending=False)
 
-    df_feat_imp.to_csv(output_path, index=False, sep=';')
+    df_feat_imp.to_csv(f"{RESULT_FOLDER}{output_path}", index=False, sep=';')
     print(f"Feature importance salvata in: {output_path}")
     return df_feat_imp
 
@@ -70,8 +71,8 @@ def save_permutation_importance(
     X_test,
     y_test,
     feature_names,
-    output_path='test4/permutation_importance.csv',
-    output_img='test4/permutation_importance.png',
+    output_path='permutation_importance.csv',
+    output_img='permutation_importance.png',
     n_repeats=30,
     random_state=42,
     scoring='roc_auc',
@@ -97,7 +98,7 @@ def save_permutation_importance(
     )
 
     # --- Salva CSV
-    df_perm_imp.to_csv(output_path, index=False, sep=';')
+    df_perm_imp.to_csv(f"{RESULT_FOLDER}{output_path}", index=False, sep=';')
     print(f"📄 Permutation importance salvata in: {output_path}")
 
     # --- Plot (top N feature)
@@ -113,14 +114,14 @@ def save_permutation_importance(
     plt.title('Permutation Importance')
     plt.gca().invert_yaxis()
     plt.tight_layout()
-    plt.savefig(output_img, dpi=300)
+    plt.savefig(f"{RESULT_FOLDER}{output_img}", dpi=300)
     plt.close()
 
     print(f"🖼️  Immagine salvata in: {output_img}")
 
     return df_perm_imp
 
-def plot_roc_auc(y_true, y_probs, output_path="img/test4/roc_curve.png"):
+def plot_roc_auc(y_true, y_probs, output_path="img/roc_curve.png"):
     fpr, tpr, _ = roc_curve(y_true, y_probs)
     auc_score = roc_auc_score(y_true, y_probs)
 
@@ -132,7 +133,7 @@ def plot_roc_auc(y_true, y_probs, output_path="img/test4/roc_curve.png"):
     plt.title("ROC Curve")
     plt.legend()
     plt.tight_layout()
-    plt.savefig(output_path)
+    plt.savefig(f"{RESULT_FOLDER}{output_path}")
     plt.close()
     print(f"ROC curve salvata in: {output_path}")
     return auc_score
@@ -194,9 +195,9 @@ def run_xgboost_with_grid_search(X, y, cluster_features, test_size=0.2, random_s
         show=False
     )
     plt.tight_layout()
-    plt.savefig("img/test4/shap_summary_bar.png", dpi=300)
+    plt.savefig(f"{RESULT_FOLDER}img/shap_summary_bar.png", dpi=300)
     plt.close()
-    print("🖼️ SHAP bar plot salvato in img/test4/shap_summary_bar.png")
+    print("🖼️ SHAP bar plot salvato")
 
     # --- 2. Beeswarm plot (puntini rosso/blu)
     shap.summary_plot(
@@ -206,9 +207,9 @@ def run_xgboost_with_grid_search(X, y, cluster_features, test_size=0.2, random_s
         show=False
     )
     plt.tight_layout()
-    plt.savefig("img/test4/shap_summary_beeswarm.png", dpi=300)
+    plt.savefig(f"{RESULT_FOLDER}img/shap_summary_beeswarm.png", dpi=300)
     plt.close()
-    print("🖼️ SHAP beeswarm plot salvato in img/test4/shap_summary_beeswarm.png")
+    print("🖼️ SHAP beeswarm plot salvato")
 
     # --- 3. Force plot del primo campione
     shap.force_plot(
@@ -220,9 +221,9 @@ def run_xgboost_with_grid_search(X, y, cluster_features, test_size=0.2, random_s
         show=False
     )
     plt.tight_layout()
-    plt.savefig("img/test4/shap_force_sample0.png", dpi=300)
+    plt.savefig(f"{RESULT_FOLDER}img/shap_force_sample0.png", dpi=300)
     plt.close()
-    print("🖼️ SHAP force plot salvato in img/test4/shap_force_sample0.png")
+    print("🖼️ SHAP force plot salvato")
 
 
     # Calcola probabilità e AUC
