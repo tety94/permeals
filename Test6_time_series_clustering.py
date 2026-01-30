@@ -23,15 +23,33 @@ plasma_columns = get_plasma_columns()
 liquor_columns = get_liquor_columns()
 
 cluster_features = liquor_columns #+ clinical_columns
-relevant_features = ['time_point'] + clinical_columns + plasma_columns
+relevant_features = ['time_point', 'pt_code'] + cluster_features+ clinical_columns + plasma_columns
 
 
 dataset = df[relevant_features].copy()
-for ii in relevant_features[1:]:
-    dataset[ii] = pd.to_numeric(dataset[ii], errors = "coerce")
+# for ii in relevant_features[1:]:
+for ii in relevant_features[2:]:
+        dataset[ii] = pd.to_numeric(dataset[ii], errors = "coerce")
 
 # Remove rows with 38 or more missing values
 dataset = dataset[dataset.isna().sum(axis=1) < 38].copy()
+
+
+
+########### test
+ids_T0_before  = set(df[df['time_point']=='T0']['pt_code'])
+ids_T6_before  = set(df[df['time_point']=='T6']['pt_code'])
+ids_T12_before = set(df[df['time_point']=='T12']['pt_code'])
+
+# Pazienti dopo il drop
+ids_T0_after  = set(dataset[dataset['time_point']=='T0']['pt_code'])
+ids_T6_after  = set(dataset[dataset['time_point']=='T6']['pt_code'])
+ids_T12_after = set(dataset[dataset['time_point']=='T12']['pt_code'])
+
+print("T6 rimossi:", ids_T6_before - ids_T6_after)
+print("T12 rimossi:", ids_T12_before - ids_T12_after)
+########### test
+
 
 # Extract data at T0, T6, T12 and impute the missing values
 data_T0 = dataset[dataset['time_point'] == 'T0'].copy()
