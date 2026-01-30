@@ -1,149 +1,207 @@
 """
-The script computes Time Series clustering using tslearn
+Time series clustering with tslearn (Soft-DTW)
+1 paziente = 1 serie temporale multivariata
+Imputazione verticale per timepoint
 """
-from functions_clustering import *                            # it contains utility functions
-import pandas as pd                                # it permits data manipulation and analysis
-import numpy as np                                 # it is a package for scientific computing in Python
-import seaborn as sns                              # it contains tools for statistical data visualization
-import matplotlib.pyplot as plt                    # it is a library for creating plots
 
-#import tslearn
-from tslearn.utils import to_time_series_dataset                  # tslearn performs time series clustering
-from tslearn.preprocessing import TimeSeriesScalerMeanVariance
-from tslearn.clustering import TimeSeriesKMeans, silhouette_score
-
+# =========================
+# IMPORT
+# =========================
+from functions_clustering import *
 from get_data import *
 
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
+from tslearn.preprocessing import TimeSeriesScalerMeanVariance
+from tslearn.clustering import TimeSeriesKMeans, silhouette_score
+from sklearn.manifold import TSNE
+
+
+# =========================
+# PARAMETRI
+# =========================
 RESULT_FOLDER = 'results/test6/'
+seed = 42
+
+timepoints = ['T0', 'T6', 'T12']
+
+
+# =========================
+# CARICAMENTO DATI
+# =========================
 df = get_sheet(sheet_name='clinic_EP')
 
 clinical_columns = get_clinical_data()
 plasma_columns = get_plasma_columns()
 liquor_columns = get_liquor_columns()
 
-cluster_features = liquor_columns #+ clinical_columns
-relevant_features = ['time_point', 'pt_code'] + cluster_features+ clinical_columns + plasma_columns
-
+cluster_features = plasma_columns
+relevant_features = ['pt_code', 'time_point'] + cluster_features + clinical_columns + liquor_columns
 
 dataset = df[relevant_features].copy()
-# for ii in relevant_features[1:]:
-for ii in relevant_features[2:]:
-        dataset[ii] = pd.to_numeric(dataset[ii], errors = "coerce")
+dataset = dataset[dataset['time_point'].isin(timepoints)]
 
-# Remove rows with 38 or more missing values
+# =========================
+# CAST NUMERICO
+# =========================
+for col in relevant_features[2:]:
+    dataset[col] = pd.to_numeric(dataset[col], errors='coerce')
+
+
+# =========================
+# PULIZIA RIGHE TROPPO VUOTE
+# =========================
 dataset = dataset[dataset.isna().sum(axis=1) < 38].copy()
 
+# =========================
+# TIENI SOLO PAZIENTI COMPLETI
+# =========================
+tp_count = dataset.groupby('pt_code')['time_point'].nunique()
+valid_patients = tp_count[tp_count == len(timepoints)].index
+dataset = dataset[dataset['pt_code'].isin(valid_patients)].copy()
+
+print("Numero pazienti validi:", len(valid_patients))
 
 
-########### test
-ids_T0_before  = set(df[df['time_point']=='T0']['pt_code'])
-ids_T6_before  = set(df[df['time_point']=='T6']['pt_code'])
-ids_T12_before = set(df[df['time_point']=='T12']['pt_code'])
-
-# Pazienti dopo il drop
-ids_T0_after  = set(dataset[dataset['time_point']=='T0']['pt_code'])
-ids_T6_after  = set(dataset[dataset['time_point']=='T6']['pt_code'])
-ids_T12_after = set(dataset[dataset['time_point']=='T12']['pt_code'])
-
-print("T6 rimossi:", ids_T6_before - ids_T6_after)
-print("T12 rimossi:", ids_T12_before - ids_T12_after)
-########### test
+# =========================
+# IMPUTAZIONE VERTICALE (PER TIMEPOINT)
+# =========================
+for tp in timepoints:
+    mask = dataset['time_point'] == tp
+    for col in cluster_features:
+        mean_tp = dataset.loc[mask, col].mean()
+        dataset.loc[mask, col] = dataset.loc[mask, col].fillna(mean_tp)
 
 
-# Extract data at T0, T6, T12 and impute the missing values
-data_T0 = dataset[dataset['time_point'] == 'T0'].copy()
-for col in relevant_features[1:]:
-    average = (data_T0.loc[:,col]).mean()
-    data_T0.loc[:,col] = (data_T0.loc[:,col]).astype(float).fillna(average)
+# =========================
+# COSTRUZIONE SERIE TEMPORALI
+# =========================
+patients = dataset['pt_code'].unique()
+X_all = []
 
-data_T6 = dataset[dataset['time_point'] == 'T6'].copy()
-for col in relevant_features[1:]:
-    average = (data_T6.loc[:,col]).mean()
-    data_T6.loc[:,col] = (data_T6.loc[:,col]).astype(float).fillna(average)
+for pt in patients:
+    patient_ts = (
+        dataset[dataset['pt_code'] == pt]
+        .set_index('time_point')
+        .loc[timepoints, cluster_features]
+        .astype(float)
+    )
 
-data_T12 = dataset[dataset['time_point'] == 'T12'].copy()
-for col in relevant_features[1:]:
-    average = (data_T12.loc[:,col]).mean()
-    data_T12.loc[:,col] = (data_T12.loc[:,col]).astype(float).fillna(average)
+    # sicurezza: niente righe completamente NaN
+    if patient_ts.isna().all(axis=1).any():
+        continue
+
+    X_all.append(patient_ts.values)
+
+X_all = np.array(X_all)
+
+print("Shape X_all:", X_all.shape)
 
 
-# Transform the dataset for tslearn
-X_all = to_time_series_dataset(np.stack([np.array(data_T0[cluster_features]), np.array(data_T6[cluster_features]), np.array(data_T12[cluster_features])], axis=1))
+# =========================
+# SCALING
+# =========================
 X_scaled = TimeSeriesScalerMeanVariance().fit_transform(X_all)
 
+print("Shape X_scaled:", X_scaled.shape)
+print("NaN count:", np.isnan(X_scaled).sum())
+print("Min/max:", X_scaled.min(), X_scaled.max())
 
-# Silhoutte score to find obtain number of clusters
-seed = 42
-best_config = 0
-best_score = float("-inf")
-silhouette = []
+
+# =========================
+# SCELTA NUMERO CLUSTER (SILHOUETTE)
+# =========================
+best_k = None
+best_score = -np.inf
+
+silhouettes = []
 inertias = []
 
-Nclusters = np.arange(2,10)
+Nclusters = range(2, 4)
 
-for kk in Nclusters:
-    model = TimeSeriesKMeans(n_clusters = kk, metric='softdtw', random_state= seed)
-    y_pred = model.fit_predict(X_scaled)
+for k in Nclusters:
+    model = TimeSeriesKMeans(
+        n_clusters=k,
+        metric='softdtw',
+        random_state=seed
+    )
+
+    labels = model.fit_predict(X_scaled)
     inertias.append(model.inertia_)
 
-    score = silhouette_score(X_scaled, y_pred, metric='softdtw')
-    silhouette.append(score)
+    if len(np.unique(labels)) > 1:
+        score = silhouette_score(X_scaled, labels, metric='softdtw')
+    else:
+        score = np.nan
+
+    silhouettes.append(score)
+
+    print(f"k={k} | inertia={model.inertia_:.2f} | silhouette={score}")
 
     if score > best_score:
         best_score = score
-        best_config = kk
+        best_k = k
 
-print(f"The best number of clusters is {best_config} with Silhouette Score: {best_score}")
+print(f"\nBest number of clusters: {best_k} (silhouette={best_score})")
 
-fig, ax = plt.subplots(1, 2)
-ax[0].plot(Nclusters, inertias, 'bo-')
+best_k = 3
+
+# =========================
+# PLOT INERTIA / SILHOUETTE
+# =========================
+fig, ax = plt.subplots(1, 2, figsize=(10, 4))
+
+ax[0].plot(list(Nclusters), inertias, 'o-')
 ax[0].set_xlabel('Number of clusters')
 ax[0].set_ylabel('Inertia')
 
-ax[1].plot(Nclusters, silhouette, 'ro-')
+ax[1].plot(list(Nclusters), silhouettes, 'o-')
 ax[1].set_xlabel('Number of clusters')
 ax[1].set_ylabel('Silhouette')
-fig.savefig( f"{RESULT_FOLDER}images/_time_series_Inertia_Silhoutte.png")
+
+plt.tight_layout()
+plt.savefig(f"{RESULT_FOLDER}/inertia_silhouette.png")
 plt.show()
 
 
-# Ask optimal number of clusters
-n_clusters = int(input('Enter the number of clusters found = '))
+# =========================
+# CLUSTERING FINALE
+# =========================
+model = TimeSeriesKMeans(
+    n_clusters=best_k,
+    metric='softdtw',
+    random_state=seed
+)
 
-# Find the clusters
-model2 = TimeSeriesKMeans(n_clusters=n_clusters, metric='softdtw', random_state= seed)
-y_pred2 = model2.fit_predict(X_scaled)
-
-# Analysis clusters at T0
-original_data_T0 = dataset[dataset['time_point'] == 'T0'].copy()
-original_data_T0.loc[:,'cluster'] = y_pred2
-print('\n-----TIME T0------')
-analyze_cluster_differences(original_data_T0, 'cluster', relevant_features[1:])
-
-# Analysis clusters at T6
-original_data_T6 = dataset[dataset['time_point'] == 'T6'].copy()
-original_data_T6.loc[:,'cluster'] = y_pred2
-print('\n-----TIME T6------')
-analyze_cluster_differences(original_data_T6, 'cluster', relevant_features[1:])
-
-# Analysis clusters at T12
-original_data_T12 = dataset[dataset['time_point'] == 'T12'].copy()
-original_data_T12.loc[:,'cluster'] = y_pred2
-print('\n-----TIME T12------')
-analyze_cluster_differences(original_data_T12, 'cluster', relevant_features[1:])
+labels = model.fit_predict(X_scaled)
 
 
+# =========================
+# ANALISI CLUSTER PER TIMEPOINT
+# =========================
+for tp in ['T0', 'T6', 'T12']:
+    df_tp = dataset[dataset['time_point'] == tp].copy()
+    df_tp['cluster'] = labels
+    print(f"\n--- {tp} ---")
+    analyze_cluster_differences(df_tp, 'cluster', relevant_features[2:])
 
-X_plt = np.stack([np.array(data_T0[relevant_features[1:]]), np.array(data_T6[relevant_features[1:]]), np.array(data_T12[relevant_features[1:]])], axis=1)
-X_plt_scaled = TimeSeriesScalerMeanVariance().fit_transform(X_plt)
 
-X_tsne2 = TSNE(n_components=2,perplexity=30,random_state=seed).fit_transform(X_plt_scaled.reshape(X_plt_scaled.shape[0], -1))
-X_tsne3 = TSNE(n_components=3,perplexity=30,random_state=seed).fit_transform(X_plt_scaled.reshape(X_plt_scaled.shape[0], -1))
+# =========================
+# t-SNE VISUALIZZAZIONE
+# =========================
+X_flat = X_scaled.reshape(X_scaled.shape[0], -1)
 
-fig1, ax = plt.subplots(1, 2)
-ax[0].scatter(X_tsne2[:, 0], X_tsne2[:, 1], c=model2.labels_, cmap='jet')
-fig1.delaxes(ax[1])
-ax[1] = fig1.add_subplot(1, 2, 2, projection='3d')
-ax[1].scatter(X_tsne3[:, 0], X_tsne3[:, 1],X_tsne3[:, 2], c=model2.labels_, cmap='jet')
+X_tsne2 = TSNE(n_components=2, perplexity=30, random_state=seed).fit_transform(X_flat)
+X_tsne3 = TSNE(n_components=3, perplexity=30, random_state=seed).fit_transform(X_flat)
+
+fig = plt.figure(figsize=(10, 4))
+
+ax1 = fig.add_subplot(121)
+ax1.scatter(X_tsne2[:, 0], X_tsne2[:, 1], c=labels, cmap='jet')
+
+ax2 = fig.add_subplot(122, projection='3d')
+ax2.scatter(X_tsne3[:, 0], X_tsne3[:, 1], X_tsne3[:, 2], c=labels, cmap='jet')
+
 plt.show()
