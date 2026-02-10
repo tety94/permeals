@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 """
 This script contains various functions useful for the experiments.
 
@@ -9,7 +6,6 @@ Email: chiara.faccio@unipd.it
 Date: January 2026
 """
 
-# ======================================================================================================================
 
 import numpy as np
 import pandas as pd
@@ -28,10 +24,6 @@ from sknetwork.clustering import Leiden, get_modularity
 
 from get_data import *
 from utilities import *
-
-# ======================================================================================================================
-# Utility functions for selecting specific columns from a database
-
 
 
 # ======================================================================================================================
@@ -56,7 +48,9 @@ def compute_clustering(dataset_clusters, scaler_method='StandardScaler', resolut
     # Compute the graph (use k-NearestNeighbors with k = 4)
     n = np.shape(dataset_scaled)[0]
     neigh = NearestNeighbors(algorithm='brute', metric='euclidean', n_jobs=1).fit(dataset_scaled)
-    W = neigh.kneighbors_graph(dataset_scaled).toarray() - np.diag(np.ones(n))
+    # W = neigh.kneighbors_graph(dataset_scaled).toarray() - np.diag(np.ones(n))
+    W = neigh.kneighbors_graph(dataset_scaled).toarray()
+    np.fill_diagonal(W, 0)
     D = (W == 1)
     boolean_graph = csr_matrix(D)
 

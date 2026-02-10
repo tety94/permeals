@@ -10,7 +10,8 @@ def get_sheet(file=EXCEL_FILE_NAME,sheet_name=None):
     df = pd.read_excel(file,  sheet_name=sheet_name, converters={'el_escorial_criteria' : convert_el_escorial_criteria,
                                                            'gold_coast_criteria': convert_gold_coast_criteria,
                                                            'genetic_WT_mut' : convert_genetic_WT_mut,
-                                                          'Strong_CAT' : convert_Strong_CAT})
+                                                           'Strong_CAT' : convert_Strong_CAT
+                                                                 })
     # df = pd.read_csv(EXCEL_FILE_NAME,  sep=',' , decimal=',')
     df = df[df['pt_code'].notna()]
 
@@ -18,6 +19,8 @@ def get_sheet(file=EXCEL_FILE_NAME,sheet_name=None):
     df.loc[df['site_of_onset'] == 1, 'site_of_onset_BS'] = 1 #spinale
 
     #df['genetic_WT_mut'] = df['genetic_WT_mut'].map({'WT': 0, 'mut': 1}).astype(float)
+
+    df = df[df['el_escorial_criteria'] != -1]
 
     return df
 
@@ -127,7 +130,7 @@ def get_plasma_columns():
 
 def get_liquor_columns():
     return [
-        'CSF_GFAP',  'CSF_MCP-1', 'CSF_NFL', 'CSF_tau', 'CSF_UCHL1', 'CSF_MMP-9',
+        'CSF_GFAP',  'CSF_MCP-1', 'CSF_NFL', 'CSF_tau', 'CSF_UCHL1', 'CSF_MMP-9'
     ]
 
 def get_respiratory_columns():
@@ -150,7 +153,7 @@ def get_umn_score_columns():
 
 def get_staging_columns():
     return [
-        'C_MiToS_TOT', 'King\'s',
+        'C_MiToS_TOT' #, 'King\'s',
     ]
 
 def get_alsfrs_columns():
@@ -182,7 +185,7 @@ def get_clinical_data():
         'dgn_BMI',
         'delta_weight_pre_dgn', 'delta_BMI_pre_dgn', 'time_to_NIV', 'time_to_PEG', 'time_to_tracheo', 'time_to_death',
         'riluzole',
-        'other_DM_therapies', 'trial', 'MRC_composite_score', 'ALSFRSr_TOT', 'delta_ALSFRS_onset', "King's",
+        'other_DM_therapies', 'trial', 'MRC_composite_score', 'ALSFRSr_TOT', 'delta_ALSFRS_onset', #"King's",
         'C_MiToS_TOT', 'MGH_TOT',
         'Penn_TOT', 'Strong_CAT'
     ]
@@ -289,6 +292,8 @@ def convert_el_escorial_criteria(x):
         res = 2
     elif x == 'suspected':
         res = 1
+    elif x == 'no' or x == 'pls definite':
+        res = -1
     else:
         res = x
     return res
@@ -297,7 +302,9 @@ def convert_gold_coast_criteria(x):
     x = x.lower()
     if x == 'yes':
         res = 1
-    elif  x == 'no':
+    elif x == 'si':
+        res = 1
+    elif x == 'no':
         res = 0
     else:
         res = x
@@ -314,9 +321,12 @@ def convert_genetic_WT_mut(x):
 	return res
 
 def convert_Strong_CAT(x):
-	x = x.lower()
-	if x == 'cn':
-		res = 1
-	else:
-		res = x
-	return res
+    if isinstance(x, int):
+        return x
+
+    x = x.lower()
+    if x == 'cn':
+        res = 1
+    else:
+        res = x
+    return res
