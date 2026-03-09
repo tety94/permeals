@@ -30,7 +30,7 @@ La pipeline completa include:
    - Vengono eseguiti test statistici:
      - Variabili numeriche:
        - 2 cluster: t-test o Mann–Whitney U
-       - >2 cluster: Kruskal–Wallis
+       - 2 cluster: Kruskal–Wallis
      - Variabili categoriali: Chi-quadro
    - Tutti i risultati dell’analisi vengono salvati in file di **log** (`.txt`).
 
