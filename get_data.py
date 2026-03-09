@@ -22,6 +22,14 @@ def get_sheet(file=EXCEL_FILE_NAME,sheet_name=None):
 
     df = df[df['el_escorial_criteria'] != -1]
 
+
+    #todo: far sistemare ai dottori questi casi
+    df.loc[df['site_of_onset'] == '2,3', 'site_of_onset'] = 2
+    df.loc[df['site_of_onset'] == '4;5', 'site_of_onset'] = 4
+    df.loc[df['site_of_onset'] == '2;3', 'site_of_onset'] = 2
+    df.loc[df['site_of_onset'] == '2.3', 'site_of_onset'] = 2
+
+
     return df
 
 def get_csf_sheet():
@@ -185,7 +193,7 @@ def get_clinical_data():
         'dgn_BMI',
         'delta_weight_pre_dgn', 'delta_BMI_pre_dgn', 'time_to_NIV', 'time_to_PEG', 'time_to_tracheo', 'time_to_death',
         'riluzole',
-        'other_DM_therapies', 'trial', 'MRC_composite_score', 'ALSFRSr_TOT', 'delta_ALSFRS_onset', #"King's",
+        'other_DM_therapies', 'trial', 'MRC_composite_score', 'ALSFRSr_TOT', #'delta_ALSFRS_onset', #"King's",
         'C_MiToS_TOT', 'MGH_TOT',
         'Penn_TOT', 'Strong_CAT'
     ]
