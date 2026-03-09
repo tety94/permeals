@@ -33,6 +33,7 @@ from utilities import *
 
 RESULT_FOLDER = 'results/test3/'
 CLUSTER_CLINICS = False
+USE_PCA = True
 
 def clustering_stability(X, model_class, k, n_boot=30):
     """
@@ -271,5 +272,5 @@ if __name__ == "__main__":
             other_features=other_features,
             max_k=8,
             time=t,
-            use_pca=False  # True se vuoi PCA per stabilizzare
+            use_pca=USE_PCA
         )
