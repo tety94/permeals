@@ -1,8 +1,6 @@
-# Analisi Clustering su Dati di Biomarcatori
+# Analisi Clustering su Dati di Biomarcatori o clinici
 
 Questo progetto esegue un'analisi di **clustering** sui dati di biomarcatori per identificare gruppi clinici simili e studiare le differenze tra i gruppi.
-
-Il codice è scritto in **Python** e utilizza librerie scientifiche come `pandas`, `numpy`, `scikit-learn` e `seaborn`.
 
 ---
 
@@ -68,6 +66,7 @@ Esegui lo script:
 python test3.py
 ```
 
-Puoi modificare use_pca=True se vuoi ridurre dimensionalità.
+Puoi modificare USE_PCA se vuoi ridurre dimensionalità.
+Puoi modificare CLUSTER_CLINICS per passare da cluster con dati di biomarcatori a cluster con dati clinici
 
 I risultati saranno salvati nella cartella results/test3/.
