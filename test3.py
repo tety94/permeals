@@ -11,8 +11,6 @@ Pipeline aggiornata:
 6. Salvataggio risultati (CSV e heatmap centroidi)
 """
 
-import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -22,14 +20,9 @@ from sklearn.metrics import silhouette_score, adjusted_rand_score
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from sklearn.utils import resample
-from scipy.stats import f_oneway, kruskal, chi2_contingency, ttest_ind, mannwhitneyu
 
 from get_data import *
 from utilities import *
-
-# ---------------------------------------------------------------------
-# Funzioni di supporto
-# ---------------------------------------------------------------------
 
 RESULT_FOLDER = 'results/test3/'
 CLUSTER_CLINICS = False
