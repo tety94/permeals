@@ -32,6 +32,7 @@ from utilities import *
 # ---------------------------------------------------------------------
 
 RESULT_FOLDER = 'results/test3/'
+CLUSTER_CLINICS = False
 
 def clustering_stability(X, model_class, k, n_boot=30):
     """
@@ -249,6 +250,11 @@ if __name__ == "__main__":
     other_features   = (umns_cols + alsfrs_cols + plasma_cols +
                         clinical_cols + ['delta_bmi'] + mrc_columns +
                         liquor_cols + als_no_als_colums + respiratory_cols)
+    if CLUSTER_CLINICS:
+        cluster_features = clinical_cols
+        other_features = (umns_cols + alsfrs_cols + plasma_cols +
+                          macsplex_columns + ['delta_bmi'] + mrc_columns +
+                          liquor_cols + als_no_als_colums + respiratory_cols)
 
     # Caricamento dati
     df = get_sheet(sheet_name='CSF')
